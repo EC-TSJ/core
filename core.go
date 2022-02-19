@@ -26,7 +26,6 @@ type (
 	Value T
 	// Dato de clave
 	Key T
-
 	// Tipo literals
 	literals struct {
 		NullString     string
@@ -127,12 +126,24 @@ func (this Decorate) Decorate(args ...T) T {
 /**
   * Nos da los literales de runas existentes
 	* @return {*literals}
+	* @@obsolete
 */
 func Literals() *literals {
 	return &literals{NullString: "", NewLine: "\n", LF: "\n", CarriageReturn: "\r", CR: "\r", Alert: "\a",
 		BackSpace: "\b", FormFeed: "\f", FF: "\f", HorizontalTab: "\t", VerticalTab: "\v", Backslash: "\\",
 		SingleQuote: "'", DoubleQuote: "\"", Space: " "}
 }
+
+/**
+ * Nos da los literales de runas existentes
+ */
+var Lit *literals = &literals{NullString: "", NewLine: "\n", LF: "\n", CarriageReturn: "\r", CR: "\r", Alert: "\a",
+	BackSpace: "\b", FormFeed: "\f", FF: "\f", HorizontalTab: "\t", VerticalTab: "\v", Backslash: "\\",
+	SingleQuote: "'", DoubleQuote: "\"", Space: " "}
+
+var L *literals = &literals{NullString: "", NewLine: "\n", LF: "\n", CarriageReturn: "\r", CR: "\r", Alert: "\a",
+	BackSpace: "\b", FormFeed: "\f", FF: "\f", HorizontalTab: "\t", VerticalTab: "\v", Backslash: "\\",
+	SingleQuote: "'", DoubleQuote: "\"", Space: " "}
 
 //!-
 
@@ -150,15 +161,19 @@ func (w *Warning) Error() string {
 // @param {T}
 // @param {T}
 // @return {Pair}
-func NewPair(t1, t2 T) *Pair {
+func (*Pair) New(t1, t2 T) *Pair {
 	return &Pair{T1: t1, T2: t2}
 }
+
+// NewPair: Obtiene un nuevo Par
+// @@obsolete
+var NewPair fnPairCallback = (&Pair{}).New
 
 // MakePair: Obtiene un nuevo Par
 // @param {T}
 // @param {T}
 // @return {Pair}
-var MakePair fnPairCallback = NewPair
+var MakePair fnPairCallback = (&Pair{}).New
 
 //!+
 /**
@@ -434,21 +449,21 @@ func ModifySlice(parm *Parm, starting uintptr, ending int) {
 
 //!+
 
-type _uuid_ [16]byte
+type Uuid [16]byte
 
-// UUID: Obtiene un uuid
+// Uuid: Obtiene un Uuid
 // @return {_uuid_}
-func UUID() (u *_uuid_) {
-	u = new(_uuid_)
+func UUID() (u *Uuid) {
+	u = new(Uuid)
 	rand.Read(u[:])
 	u[8] = (u[8] | 0x40) & 0x7F    // setVariant - 0x40
 	u[6] = (u[6] & 0xF) | (4 << 4) // setVersion - 4
 	return
 }
 
-// Retorna version desparseada de la secuencia UUID.
+// Retorna version desparseada de la secuencia Uuid.
 // interface Stringer
-func (u *_uuid_) String() string {
+func (u *Uuid) String() string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])
 }
 
