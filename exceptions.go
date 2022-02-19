@@ -264,7 +264,7 @@ func (fi *FileIOError) Error() string {
 // @param {string}
 // @param {...T} Se le pone por igualdad con las siguientes
 // @return {error}
-func NewHTTPError(code string, msg ...T) error {
+func (*HTTPError) New(code string, msg ...T) error {
 	/* msg no usado*/
 	pair := httpCodes[strings.ToUpper(code)]
 	if pair == nil {
@@ -273,12 +273,16 @@ func NewHTTPError(code string, msg ...T) error {
 	return &HTTPError{BaseError{Code: pair.T1.(int), Err: code, Text: pair.T2.(string)}}
 }
 
+// Devuelve un error HTTP
+// @@obsolete
+var NewHTTPError func(string, ...T) error = (&HTTPError{}).New
+
 // Devuelve un error DB
 // @param {string}
 // @param {...T}
 // @return {error}
-func NewDBError(code string, msg ...T) error {
-	mlc := ArgOptional(Literals().NullString, msg).(string)
+func (*DBError) New(code string, msg ...T) error {
+	mlc := ArgOptional(Lit.NullString, msg).(string)
 	pair := dbCodes[strings.ToUpper(code)]
 	if pair == nil {
 		return &DBError{BaseError{Code: -1, Err: "<DBERROR(" + code + ")>", Text: mlc}, Literals().NullString}
@@ -286,12 +290,16 @@ func NewDBError(code string, msg ...T) error {
 	return &DBError{BaseError{Code: pair.T2.(int), Err: code, Text: mlc}, pair.T1.(string)}
 }
 
+// Devuelve un error DB
+// @@obsolete
+var NewDbError func(string, ...T) error = (&DBError{}).New
+
 // Devuelve un error FileIO
 // @param {string}
 // @param {...T}
 // @return {error}
-func NewFileIOError(code string, msg ...T) error {
-	mlc := ArgOptional(Literals().NullString, msg).(string)
+func (*FileIOError) New(code string, msg ...T) error {
+	mlc := ArgOptional(Lit.NullString, msg).(string)
 	pair := fileIOCodes[strings.ToUpper(code)]
 	if pair == nil {
 		return &FileIOError{BaseError{Code: -1, Err: "<FILEIOERROR(" + code + ")>" + code, Text: mlc}, Literals().NullString}
@@ -299,12 +307,16 @@ func NewFileIOError(code string, msg ...T) error {
 	return &FileIOError{BaseError{Code: pair.T2.(int), Err: code, Text: mlc}, pair.T1.(string)}
 }
 
+// Devuelve un error FileIO
+// @@obsolete
+var NewFileIOError func(string, ...T) error = (&FileIOError{}).New
+
 // Emite un Warning
 // @param {string}
 // @param {...T}
 // @return {error}
-func NewWarning(code string, msg ...T) error {
-	mlc := ArgOptional(Literals().NullString, msg).(string)
+func (*Warning) New(code string, msg ...T) error {
+	mlc := ArgOptional(Lit.NullString, msg).(string)
 	pair := warningCodes[strings.ToUpper(code)]
 	if pair == nil {
 		return &Warning{BaseError{Code: -1, Err: "<WARNING(" + code + ")>", Text: mlc}}
@@ -312,13 +324,17 @@ func NewWarning(code string, msg ...T) error {
 	return &Warning{BaseError{Code: pair.T2.(int), Err: code, Text: mlc}}
 }
 
+// Emite un Warning
+// @@obsolete
+var NewWarning func(string, ...T) error = (&Warning{}).New
+
 /** Emite un BaseError
 * @param {string}
 * @param {...T}
 * @return {error}
  */
-func NewBaseError(code string, msg ...T) error {
-	mlc := ArgOptional(Literals().NullString, msg).(string)
+func (*BaseError) New(code string, msg ...T) error {
+	mlc := ArgOptional(Lit.NullString, msg).(string)
 	pair := baseErrorCodes[strings.ToUpper(code)]
 	if pair == nil {
 		return &BaseError{Code: -1, Err: "<BASEERROR(" + code + ")>", Text: strings.Trim(mlc+" ("+pair.T1.(string)+")", " ")}
@@ -326,14 +342,18 @@ func NewBaseError(code string, msg ...T) error {
 	return &BaseError{Code: pair.T2.(int), Err: code, Text: strings.Trim(mlc+" ("+pair.T1.(string)+")", " ")}
 }
 
+// Emite un BaseError
+// @@obsolete
+var NewBaseError func(string, ...T) error = (&BaseError{}).New
+
 //!+
 // Emite un Error Personalizado
 // @param {string}
 // @param {...T}
 // @return {error}
 // @@obsolete
-func NewError(code string, nb int, msg ...T) error {
-	mlc := ArgOptional(Literals().NullString, msg).(string)
+func (*BaseError) Custom(code string, nb int, msg ...T) error {
+	mlc := ArgOptional(Lit.NullString, msg).(string)
 	pair := new(Pair)
 	pair.T1 = nb
 	pair.T2 = mlc
@@ -342,7 +362,12 @@ func NewError(code string, nb int, msg ...T) error {
 	//return fmt.Errorf("Error: '%s': '%d' : '%s'", code, pair.T1.(int), pair.T2.(string))
 }
 
-// Custom Error
-var CustomError customErr = NewError
+// Emite un Error Personalizado
+// @@obsolete
+var NewError customErr = (&BaseError{}).Custom
+
+// Emite un Error Personalizado
+// @@obsolete
+var CustomError customErr = (&BaseError{}).Custom
 
 //!-

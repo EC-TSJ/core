@@ -8,10 +8,39 @@
 
 package core
 
-type monthDay int
+type (
+	MonthDay int
+	monthday struct {
+		// Enero
+		Enero MonthDay
+		// Ferbrero
+		Febrero MonthDay
+		// Marzo
+		Marzo MonthDay
+		// Abril
+		Abril MonthDay
+		// Mayo
+		Mayo MonthDay
+		// Junio
+		Junio MonthDay
+		// Julio
+		Julio MonthDay
+		// Agosto
+		Agosto MonthDay
+		// Septiembre
+		Septiembre MonthDay
+		// Octubre
+		Octubre MonthDay
+		// Noviembre
+		Noviembre MonthDay
+		// Diciembre
+		Diciembre MonthDay
+	}
+	EMonthday = monthday
+)
 
 const (
-	__ENERO__ monthDay = iota + 1
+	__ENERO__ MonthDay = iota + 1
 	__FEBRERO__
 	__MARZO__
 	__ABRIL__
@@ -25,27 +54,11 @@ const (
 	__DICIEMBRE__
 )
 
-type monthday struct {
-	Enero      monthDay
-	Febrero    monthDay
-	Marzo      monthDay
-	Abril      monthDay
-	Mayo       monthDay
-	Junio      monthDay
-	Julio      monthDay
-	Agosto     monthDay
-	Septiembre monthDay
-	Octubre    monthDay
-	Noviembre  monthDay
-	Diciembre  monthDay
-}
-
-func MonthDay() *monthday {
-	return &monthday{Enero: __ENERO__, Febrero: __FEBRERO__, Marzo: __MARZO__, Abril: __ABRIL__, Mayo: __MAYO__, Junio: __JUNIO__,
-		Julio: __JULIO__, Agosto: __AGOSTO__, Septiembre: __SEPTIEMBRE__, Octubre: __OCTUBRE__, Noviembre: __NOVIEMBRE__, Diciembre: __DICIEMBRE__}
-}
+// enum MonthDay
+var EMonthDay *EMonthday = &monthday{Enero: __ENERO__, Febrero: __FEBRERO__, Marzo: __MARZO__, Abril: __ABRIL__, Mayo: __MAYO__, Junio: __JUNIO__,
+	Julio: __JULIO__, Agosto: __AGOSTO__, Septiembre: __SEPTIEMBRE__, Octubre: __OCTUBRE__, Noviembre: __NOVIEMBRE__, Diciembre: __DICIEMBRE__}
 
 // interface Stringer
-func (m monthDay) String() string {
+func (m MonthDay) String() string {
 	return [...]string{"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}[m-1]
 }
