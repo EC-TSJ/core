@@ -1,7 +1,0 @@
-// separator: puede ser:
-// 1.-  "colon"
-// 2.-  "equal"
-{
-  "separator": "equal",
-  "groups": true
-}
