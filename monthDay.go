@@ -9,56 +9,41 @@
 package core
 
 type (
-	MonthDay int
-	monthday struct {
-		// Enero
-		Enero MonthDay
-		// Ferbrero
-		Febrero MonthDay
-		// Marzo
-		Marzo MonthDay
-		// Abril
-		Abril MonthDay
-		// Mayo
-		Mayo MonthDay
-		// Junio
-		Junio MonthDay
-		// Julio
-		Julio MonthDay
-		// Agosto
-		Agosto MonthDay
-		// Septiembre
-		Septiembre MonthDay
-		// Octubre
-		Octubre MonthDay
-		// Noviembre
-		Noviembre MonthDay
-		// Diciembre
-		Diciembre MonthDay
-	}
-	EMonthday = monthday
+	monthDay int // Para métodos de monthDay
 )
 
-const (
-	__ENERO__ MonthDay = iota + 1
-	__FEBRERO__
-	__MARZO__
-	__ABRIL__
-	__MAYO__
-	__JUNIO__
-	__JULIO__
-	__AGOSTO__
-	__SEPTIEMBRE__
-	__OCTUBRE__
-	__NOVIEMBRE__
-	__DICIEMBRE__
-)
-
-// enum MonthDay
-var EMonthDay *EMonthday = &monthday{Enero: __ENERO__, Febrero: __FEBRERO__, Marzo: __MARZO__, Abril: __ABRIL__, Mayo: __MAYO__, Junio: __JUNIO__,
-	Julio: __JULIO__, Agosto: __AGOSTO__, Septiembre: __SEPTIEMBRE__, Octubre: __OCTUBRE__, Noviembre: __NOVIEMBRE__, Diciembre: __DICIEMBRE__}
+// ? @public @enum MonthDay
+var MonthDay = &struct {
+	Enero, Febrero, Marzo, Abril, Mayo, Junio, Julio, Agosto, Septiembre, Octubre, Noviembre, Diciembre *Const[monthDay]
+}{
+	Enero:      (&Const[monthDay]{}).New(1),
+	Febrero:    (&Const[monthDay]{}).New(2),
+	Marzo:      (&Const[monthDay]{}).New(3),
+	Abril:      (&Const[monthDay]{}).New(4),
+	Mayo:       (&Const[monthDay]{}).New(5),
+	Junio:      (&Const[monthDay]{}).New(6),
+	Julio:      (&Const[monthDay]{}).New(7),
+	Agosto:     (&Const[monthDay]{}).New(8),
+	Septiembre: (&Const[monthDay]{}).New(9),
+	Octubre:    (&Const[monthDay]{}).New(10),
+	Noviembre:  (&Const[monthDay]{}).New(11),
+	Diciembre:  (&Const[monthDay]{}).New(12),
+}
 
 // interface Stringer
-func (m MonthDay) String() string {
-	return [...]string{"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}[m-1]
+func (m monthDay) String() string {
+	return [...]string{
+		"Enero",
+		"Febrero",
+		"Marzo",
+		"Abril",
+		"Mayo",
+		"Junio",
+		"Julio",
+		"Agosto",
+		"Septiembre",
+		"Octubre",
+		"Noviembre",
+		"Diciembre",
+	}[int(m)-1]
 }

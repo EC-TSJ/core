@@ -9,41 +9,31 @@
 package core
 
 type (
-	WeekDay int
-	weekday struct {
-		// Lunes
-		Lunes WeekDay
-		// Martes
-		Martes WeekDay
-		// Miércoles
-		Miércoles WeekDay
-		// Jueves
-		Jueves WeekDay
-		// Viernes
-		Viernes WeekDay
-		// Sábado
-		Sábado WeekDay
-		// Domingo
-		Domingo WeekDay
-	}
-	EWeekday = weekday
+	weekDay int // para métodos de weekDay
 )
 
-const (
-	__LUNES__ WeekDay = iota + 1
-	__MARTES__
-	__MIERCOLES__
-	__JUEVES__
-	__VIERNES__
-	__SABADO__
-	__DOMINGO__
-)
-
-// enum WeekDay
-var EWeekDay *EWeekday = &weekday{Lunes: __LUNES__, Martes: __MARTES__, Miércoles: __MIERCOLES__, Jueves: __JUEVES__,
-	Viernes: __VIERNES__, Sábado: __SABADO__, Domingo: __DOMINGO__}
+// ? @public @enum WeekDay
+var WeekDay = &struct {
+	Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo *Const[weekDay]
+}{
+	Lunes:     (&Const[weekDay]{}).New(1),
+	Martes:    (&Const[weekDay]{}).New(2),
+	Miércoles: (&Const[weekDay]{}).New(3),
+	Jueves:    (&Const[weekDay]{}).New(4),
+	Viernes:   (&Const[weekDay]{}).New(5),
+	Sábado:    (&Const[weekDay]{}).New(6),
+	Domingo:   (&Const[weekDay]{}).New(7),
+}
 
 // interface Stringer
-func (w WeekDay) String() string {
-	return [...]string{"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sabado", "Domingo"}[w-1]
+func (w weekDay) String() string {
+	return [...]string{
+		"Lunes",
+		"Martes",
+		"Miércoles",
+		"Jueves",
+		"Viernes",
+		"Sabado",
+		"Domingo",
+	}[int(w)-1]
 }
