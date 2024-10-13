@@ -1,95 +1,82 @@
 package core
 
-import (
-	"errors"
-)
-
 /*******************************************************************************
- * ATypes[T ordered]. @Abstract Class de la que dependen las demás.
- *? @public @abstract @class Types[T] @implements IGetter
+ * Types[T ordered]. @Abstract Class de la que dependen las demás.
+ *? @public @abstract @class types[T] @implements IAccesors[T]
  ******************************************************************************/
-type Types[T Ordered] struct {
+type types[T Ordered] struct {
+	/**
+		 *! @extends
+	   *? @@AbstractError
+	*/*Decorator[func(func(...any) T) func(ClassType, Object_Of) T]
 	/**
 	 *! @implements
-	 */IAccesors IAccesors[T]
-	Class        ClassType
-	__assigned   bool // solo para ReadOnly
-	__key        T    // valor
+	 */IAccesors[T]
+	Class      ClassType
+	__assigned bool // solo para ReadOnly
+	__key      T    // valor
 }
 
-/**************************************************
- * decorators: __ending && __panicking
- *************************************************/
-//? @decorator __ending[T](*Types[T])(classMethods)
-func __ending[T Ordered](g *Types[T]) func(ClassMethods) {
-	return func(vis ClassMethods) {
-		if g.Class == Class.Abstract {
-			var (
-				s string = [...]string{"Class", "Method"}[vis]
-				e error  = errors.New("ReferenceError: Abstract " + s + ": Don't Execute.")
-			)
-			Exception(nil)(func() { Throw(e) })
-		}
-	}
-}
-
-// ? @decorator  __panicking[T](*Types[T])()
-//
-// ? @__ending(g)(ClassMethod)
-func __panicking[T Ordered](this *Types[T]) func() {
-	return func() {
-		__ending(this)(ClassMethod.Method)
+/*******************************************************************************
+ *? @static
+ *? @constructor
+ *? @compose
+ */
+func (*types[T]) compose(val T, cl ClassType) *types[T] {
+	return &types[T]{
+		IAccesors:  nil,
+		Class:      cl,
+		__key:      val,
+		__assigned: true,
+		Decorator:  (&Decorator[func(func(...any) T) func(ClassType, Object_Of) T]{}).New(AbstractError),
 	}
 }
 
 /*******************************************************************************
- *? @media @constructor
+ *? @static
+ *? @constructor
+ *? @new
  */
-func (*Types[T]) compose(val T, cl ClassType) *Types[T] {
-	return &Types[T]{IAccesors: nil, Class: cl, __key: val, __assigned: true}
+//? @AbstractError
+func (*types[T]) New() {
+	AbstractError := (&Decorator[func(func(...any) T) func(ClassType, Object_Of) T]{}).New(AbstractError)
+	AbstractError.Decorate(func(...any) T { return Val(-1).(T) })(Class.Abstract, ObjectOf.Class)
 }
 
 /*******************************************************************************
- *? @static @constructor @new
- */
-//? @__ending(this)(ClassMethod)
-func (this *Types[T]) New() {
-	__ending(this)(ClassMethod.Class)
-}
-
-/*******************************************************************************
+ *? @virtual
  *? @override
- *? core.Method.Override
  */
-//? @__panicking(g)()
-func (this *Types[T]) Get() /**@virtual*/ T {
-	__panicking(this)()
-	return this.__key
+//? @AbstractError
+func (this *types[T]) Get() T {
+	return this.Decorate(func(...any) T { return this.__key })(this.Class, ObjectOf.Method)
 }
 
 /*******************************************************************************
+ *? @virtual
  *? @override
- *? core.Method.Override
  */
-//? @__panicking(g)()
-func (this *Types[T]) Set(value T) /**@virtual*/ {
-	__panicking(this)()
+//? @AbstractError
+func (this *types[T]) Set(value T) {
+	this.Decorate(func(...any) T { return Val(-1).(T) })(this.Class, ObjectOf.Method)
 }
 
 /*******************************************************************************
  * Nos da un valor de tipo ReadOnly.
  * Se asigna un valor de inicio pero ya no se puede modificar
  *******************************************************************************
- *? @public @class ReadOnly[T] @extends Types[T]
+ *? @public @class ReadOnly[T] @extends types[T]
  ******************************************************************************/
 type ReadOnly[T Ordered] struct {
 	/**
 	 *! @extends
-	 */Types[T]
+	 */types[T]
 }
 
 /*******************************************************************************
- *? @static @constructor @New
+ *? @static
+ *? @constructor
+ *? @New
  */
 func (this *ReadOnly[T]) New(value T) *ReadOnly[T] {
 	var (
@@ -97,7 +84,7 @@ func (this *ReadOnly[T]) New(value T) *ReadOnly[T] {
 		rd  *ReadOnly[T] = this
 	)
 	if !this.__assigned {
-		rd = &ReadOnly[T]{*(&Types[T]{}).compose(value, Class.Derived)}
+		rd = &ReadOnly[T]{*(&types[T]{}).compose(value, Class.Derived)}
 		rd.IAccesors = rd
 		if value == nil {
 			rd.__assigned = false
@@ -108,7 +95,6 @@ func (this *ReadOnly[T]) New(value T) *ReadOnly[T] {
 
 /*******************************************************************************
  *? @override
- *? core.Method.Override
  */
 func (this *ReadOnly[T]) Set(value T) /**@override*/ {
 	if !this.__assigned {
@@ -120,23 +106,25 @@ func (this *ReadOnly[T]) Set(value T) /**@override*/ {
 /*******************************************************************************
  * Nos da un valor de tipo Const.
  *******************************************************************************
- *? @public @class Const[T] @extends Types[T]
+ *? @public @class Const[T] @extends types[T]
  ******************************************************************************/
 type Const[T Ordered] struct {
 	/**
 	 *! @extends
-	 */Types[T]
+	 */types[T]
 }
 
 /*******************************************************************************
- *? @static @constructor @New
+ *? @static
+ *? @constructor
+ *? @New
  */
 func (this *Const[T]) New(val T) *Const[T] {
 	var (
 		_const *Const[T] = this
 	)
 	if !this.__assigned {
-		_const = &Const[T]{*(&Types[T]{}).compose(val, Class.Derived)}
+		_const = &Const[T]{*(&types[T]{}).compose(val, Class.Derived)}
 		_const.IAccesors = _const
 	}
 	return _const
@@ -147,28 +135,29 @@ func (this *Const[T]) New(val T) *Const[T] {
  * instancia/valor.
  * Los límites en donde se mueve son Upper y Lower, de Java, p. ej.
  *******************************************************************************
- *? @public @class Static[T] @extends Types[T]
+ *? @public @class Static[T] @extends types[T]
  ******************************************************************************/
 type Static[T Number] struct {
 	/**
 	 *! @extends
-	 */Types[T]
+	 */types[T]
 	Lower int // lower index for print
 	Upper int // upeer index for print
 }
 
 /*******************************************************************************
- *? @static @constructor @New
+ *? @static
+ *? @constructor
+ *? @New
  */
 func (this *Static[T]) New(val T) *Static[T] {
-	st := &Static[T]{*(&Types[T]{}).compose(val, Class.Derived), 0, 9223372036854775806}
+	st := &Static[T]{*(&types[T]{}).compose(val, Class.Derived), 0, 9223372036854775806}
 	st.IAccesors = st
 	return st
 }
 
 /*******************************************************************************
  *? @override
- *? core.Method.Override
  */
 func (this *Static[T]) Get() /**@override*/ T {
 	if this.__key > T(this.Upper) {
@@ -180,16 +169,16 @@ func (this *Static[T]) Get() /**@override*/ T {
 }
 
 // ------------------------------------------------------------------------------
-// ? @type Prop
-type Prop byte
+// ? @type prop
+type prop byte
 
 const (
 	// Lector de propiedades habilitado
-	T_PROPGET Prop = 0b0001
+	T_PROPGET prop = 0b0001
 	// Escritor de propiedades habilitado
-	T_PROPSET Prop = 0b0010
+	T_PROPSET prop = 0b0010
 	// valor cero
-	zero Prop = 0
+	zero prop = 0
 )
 
 /*******************************************************************************
@@ -199,29 +188,31 @@ const (
  * para controlar cual son las funciones que se asignan: Get
  * ó Set.
  * Se usa como el segundo parámetro de New(Value, [Propertys]),
- * ó directamente a través de la propiedad Prop. Así:
- * InstanceVar(propertyInstance[type]).Prop = T_PROPGET | T_PROPSET.
+ * ó directamente a través de la propiedad prop. Así:
+ * InstanceVar(propertyInstance[type]).prop = T_PROPGET | T_PROPSET.
  *******************************************************************************
- *? @public @class Property[T] @extends Types[T]
+ *? @public @class Property[T] @extends types[T]
  ******************************************************************************/
 type Property[T Ordered] struct {
 	/**
 	 *! @extends
-	 */Types[T]
-	Prop Prop
+	 */types[T]
+	prop prop
 }
 
 /*******************************************************************************
- *? @static @constructor @New
+ *? @static
+ *? @constructor
+ *? @New
  */
-func (this *Property[T]) New(value T, t ...Prop) *Property[T] {
+func (this *Property[T]) New(value T, t ...prop) *Property[T] {
 	var (
 		_prop *Property[T] = this
-		z     Prop
+		z     prop
 	)
 	if !this.__assigned {
-		z = (&Ovl2[Prop]{}).New().ArgOptional(zero, t) // optional[Prop](zero, t...)
-		_prop = &Property[T]{Types: *(&Types[T]{}).compose(value, Class.Derived), Prop: If[Prop](t == nil)(T_PROPGET|T_PROPSET, z)}
+		z = (&Ovl2[prop]{}).New().ArgOptional(zero, t) // optional[prop](zero, t...)
+		_prop = &Property[T]{types: *(&types[T]{}).compose(value, Class.Derived), prop: If[prop](t == nil)(T_PROPGET|T_PROPSET, z)}
 		_prop.IAccesors = _prop
 	}
 	return _prop
@@ -229,10 +220,9 @@ func (this *Property[T]) New(value T, t ...Prop) *Property[T] {
 
 /*******************************************************************************
  *? @override
- *? core.Method.Override
  */
 func (this *Property[T]) Get() /**@override*/ T {
-	if this.Prop&T_PROPGET == T_PROPGET {
+	if this.prop&T_PROPGET == T_PROPGET {
 		return this.__key
 	}
 	return *new(T) //Default[T]()
@@ -240,10 +230,9 @@ func (this *Property[T]) Get() /**@override*/ T {
 
 /*******************************************************************************
  *? @override
- *? core.Method.Override
  */
 func (this *Property[T]) Set(value T) /**@override*/ {
-	if this.Prop&T_PROPSET == T_PROPSET {
+	if this.prop&T_PROPSET == T_PROPSET {
 		this.__key = value
 	}
 }

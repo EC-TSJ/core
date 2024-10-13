@@ -11,7 +11,6 @@ package core
 import (
 	"fmt"
 	"reflect"
-	"strings"
 )
 
 //!+
@@ -22,8 +21,7 @@ import (
  * !@param {any} a POINTER data
  * !@return {[]string}
  * Luego se puede hacer ([]reflect.Value).Kind(),
- * ([]reflect.Value).Interface(), ([]reflect.Value).Type(),
- * ([]reflect.Value).etc
+ * ([]reflect.Value).Interface(), ([]reflect.Value).Type(), etc
  */
 func GetProperties(element any) ([]string, []reflect.Value) {
 	tt := make([]string, 0)
@@ -94,25 +92,25 @@ func TypeSprintf(element any) string {
  *! @param {any}
  *! @return {string}
  */
-func TypeOf(val any) string {
-	v := fmt.Sprintf("%T", val)
-	v1 := strings.Split(v, "main.")
-	if len(v1) == 1 {
-		return v1[0]
-	} else {
-		return v1[0] + v1[1]
-	}
-}
+// func TypeOf1(val any) string {
+// 	v := fmt.Sprintf("%T", val)
+// 	v1 := strings.Split(v, "main.")
+// 	if len(v1) == 1 {
+// 		return v1[0]
+// 	} else {
+// 		return v1[0] + v1[1]
+// 	}
+// }
 
 /**
- *TypeOf nos dice de que tipo es un elemento dado. Nos lo dice mediante TypeOf de reflect.
+ * TypeOf nos dice de que tipo es un elemento dado. Nos lo dice mediante TypeOf de reflect.
  *
  * !@param {any} element
  * !@return string
  */
-// func TypeOf(element any) string {
-// 	return reflect.TypeOf(element).String()
-// }
+func TypeOf(element any) string {
+	return reflect.TypeOf(element).String()
+}
 
 /**
  * TypeIFace nos dice de que tipo es un elemento dado. Nos lo dice mediante
@@ -183,7 +181,7 @@ func CallFuncByName( /* tipo */ myClass any /* nombre funcion */, funcName strin
 	myClassValue := reflect.ValueOf(myClass)
 	m := myClassValue.MethodByName(funcName)
 	if !m.IsValid() {
-		return make([]reflect.Value, 0) /*(&errors.Errors{}).Custom("Methods not found", L.NullString, 0x2009, funcName)*/, fmt.Errorf("Method not found \"%s\"", funcName)
+		return make([]reflect.Value, 0), fmt.Errorf("Method not found \"%s\"", funcName)
 	}
 	in := make([]reflect.Value, len(params))
 	for element, param := range params {

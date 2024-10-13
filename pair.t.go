@@ -10,11 +10,11 @@ type (
 		/**
 		 *? @abstract @virtual
 		 */
-		GetT1() /** @virtual */ T1
+		GetT1() T1
 		/**
 		 *? @abstract @virtual
 		 */
-		GetT2() /** @virtual */ T2
+		GetT2() T2
 	}
 
 	/*******************************************************************************
@@ -23,9 +23,12 @@ type (
 	 *! @type {T1 any}
 	 *! @type {T2 anyº}
 	 *
-	 *? @public @abstract @class APair[T1, T2]
+	 *? @public @abstract @class APair[T1, T2] @implements IPair[T1, T2]
 	 */
 	APair[T1, T2 any] struct {
+		/**
+		 *! @implements
+		 */
 		IPair[T1, T2]
 		Class ClassType
 		T1    T1
@@ -38,10 +41,12 @@ type (
 	 *! @type {T1 any}
 	 *! @type {T2 anyº}
 	 *
-	 *? @public @class Pair[T1, T2]
+	 *? @public @class Pair[T1, T2] @extends APair[T1, T2]
 	 */
 	Pair[T1, T2 any] struct {
-		*APair[T1, T2]
+		/**
+		 *! @extends
+		 */*APair[T1, T2]
 	}
 )
 
@@ -64,9 +69,9 @@ func (*Pair[T1, T2]) New(t1 T1, t2 T2) *Pair[T1, T2] {
  *! @returns {T1}
  *
  *? @override
- *? core.Method.Override
+ *? Method.Override
  */
-func (this *Pair[T1, T2]) GetT1() /** @override */ T1 {
+func (this *Pair[T1, T2]) GetT1() T1 {
 	return this.T1
 }
 
@@ -75,9 +80,9 @@ func (this *Pair[T1, T2]) GetT1() /** @override */ T1 {
  *! @returns {T2}
  *
  *? @override
- *? core.Method.Override
+ *? Method.Override
  */
-func (this *Pair[T1, T2]) GetT2() /** @override */ T2 {
+func (this *Pair[T1, T2]) GetT2() T2 {
 	return this.T2
 }
 
@@ -87,7 +92,7 @@ func (this *Pair[T1, T2]) GetT2() /** @override */ T2 {
  *  Obtiene el nombre de la clase
  *! @returns {string}
  *
- *? @core.Method.Normal
+ *? @Method.Normal
  */
 func (this *APair[T1, T2]) String() string {
 	return If[string](reflect.TypeOf(this).Kind() == reflect.Pointer)("*"+reflect.TypeOf(this).Elem().Name(), reflect.TypeOf(this).Name())

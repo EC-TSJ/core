@@ -136,7 +136,7 @@ func UnInterface[T comparable](data any) T {
  * !@param {...any} valor opcional, si existe, del mismo tipo que el anterior. Debe existir.
  * !@return {T}
  */
-func Option[T comparable](_default T, v ...any) T {
+func Opt[T comparable](_default T, v ...any) T {
 	if v != nil {
 		if v[0] == *new(T) {
 			return _default
@@ -192,44 +192,45 @@ func IsDefault[T comparable](v T) bool {
  *?	})(func(arg1 ...string) string {
  *?		fmt.Println("inside B with:", arg1[0])
  *?		return arg1[0]
- *?	}, "sopla")
- *?  ...
+ *?	})("sopla")
+ *  ...
  *? MULTIPLE DECORATORS
- *? ...
- *?	Decorate(func() []core.Decorator[func(func(...string) string, ...string) string] {
+ *  ...
+ *?	Decorate(func() []core.Decorator[func(func(...string) string) func(...string) string] {
  *?		var (
- *?    	fn []core.Decorator[func(func(...string) string, ...string) string]
+ *?    	fn []core.Decorator[func(func(...string) string) func(...string) string]
  *?   )
- *?		fn = append(fn, *(&core.Decorator[func(func(...string) string, ...string) string]{}).New(protoroos[func(...string) string]))
- *?		fn = append(fn, *(&core.Decorator[func(func(...string) string, ...string) string]{}).New(core.MakeParagraph[func(...string) string]))
- *?		fn = append(fn, *(&core.Decorator[func(func(...string) string, ...string) string]{}).New(core.MakeItalic[func(...string) string]))
+ *?		fn = append(fn, *(&Decorator[func(func(...string) string) func(...string) string]{}).New(protoroos[func(...string) string]))
+ *?		fn = append(fn, *(&Decorator[func(func(...string) string) func(...string) string]{}).New(MakeParagraph[func(...string) string]))
+ *?		fn = append(fn, *(&Decorator[func(func(...string) string) func(...string) string]{}).New(MakeItalic[func(...string) string]))
  *?		return fn
- *?	})(funcBB, "soplapollas")
+ *?	})(funcBB)("soplapollas")
  *? ...
  *</CODE>
- *
+ *<ANOTHER CODE>
+ *</ANOTHER CODE>
  * !@type {T func(func(...X) X, ...X) X, X Ordered}
  * !@param {func() *Decorator[T]}
  * !@returns {func(FuncV1X[X, X], ...X) X}
  */
-func Decorate[X func(func(...T) T, ...T) T, T comparable](deco func() []Decorator[X]) func(func(...T) T, ...T) T {
+func Decorate[X func(func(...T) T) func(...any) T, T comparable](deco func() []Decorator[X]) func(func(...T) T) func(...any) T {
 	decor := deco()
-	return func(fn func(...T) T, parameters ...T) T {
-		var (
-			st T
-		)
-		for n, v := range decor {
-			if n == 0 {
-				if v.Execute {
-					st = v.Decorate(fn, parameters...) // any(decor.Decorate(fn, parameters[0])).(X)
-				}
-			} else {
-				if v.Execute {
-					st = v.Decorate(fn, st) // any(decor.Decorate(fn, parameters[0])).(X)
+	return func(fn func(...T) T) func(parameters ...any) T {
+		return func(parameters ...any) T {
+			var (
+				st T
+			)
+			for n, v := range decor {
+				if n == 0 && v.Execute {
+					st = v.Decorate(fn)(parameters...) //
+				} else {
+					if v.Execute {
+						st = v.Decorate(fn)(st) //
+					}
 				}
 			}
+			return st
 		}
-		return st
 	}
 }
 

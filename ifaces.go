@@ -23,3 +23,41 @@ type IComparer[T Ordered] interface {
 type IEquater[T comparable] interface {
 	Equal(T) bool
 }
+
+// ? @public @interface ICounter
+type ICounter interface {
+	Count() int
+}
+
+/*******************************************************************************
+ *  for Get/Set functions
+ *? @public @interface IGetter
+ ******************************************************************************/
+type IGetter[T Ordered] interface {
+	/**
+	 *? @abstract
+	 *? @virtual
+	 */
+	Get() T
+}
+
+/*******************************************************************************
+ *  for Get/Set functions
+ *? @public @interface ISetter
+ ******************************************************************************/
+type ISetter[T Ordered] interface {
+	/**
+	 *? @abstract
+	 *? @virtual
+	 */
+	Set(T)
+}
+
+/*******************************************************************************
+ *  for Get/Set functions
+ *? @public @interface IAccesors
+ ******************************************************************************/
+type IAccesors[T Ordered] interface {
+	IGetter[T]
+	ISetter[T]
+}

@@ -2,226 +2,242 @@ package core
 
 import (
 	"encoding/base64"
+	"internal/errors"
 	"strings"
 )
 
-// ? @public @enum Decorators
-var Decorators = &struct {
-	Capitalize, MakeItalic, MakeParagraph, MakeBold, ToLower, ToUpper, ToBase64, ToBase32 *Decorator[func(func(...string) string, ...string) string]
-	//ToInterface                                                               *Decorator[func(func(any) any, any) any]
-	// ToFloat  *Decorator[func(func(any) float64, any) float64]
-	// ToInt    *Decorator[func(func(any) int, any) int]
-	// ToString *Decorator[func(func(any) any, any) any]
-	//To *Decorator[func(func(int) int, int) int]
-}{
-	Capitalize:    (&Decorator[func(func(...string) string, ...string) string]{}).New(Capitalize),
-	MakeItalic:    (&Decorator[func(func(...string) string, ...string) string]{}).New(MakeItalic),
-	MakeParagraph: (&Decorator[func(func(...string) string, ...string) string]{}).New(MakeParagraph),
-	MakeBold:      (&Decorator[func(func(...string) string, ...string) string]{}).New(MakeBold),
-	//ToInterface:   (&Decorator[func(func(any) any, any) any]{}).New(ToInterface),
-	// ToFloat:  (&Decorator[func(func(any) float64, any) float64]{}).New(ToFloat),
-	// ToInt:    (&Decorator[func(func(any) int, any) int]{}).New(ToInt),
-	// ToString: (&Decorator[func(func(any) any, any) any]{}).New(ToString),
-	//To:       (&Decorator[func(func(int) int, int) int]{}).New(To),
-	ToLower:  (&Decorator[func(func(...string) string, ...string) string]{}).New(ToLower[func(...string) string]),
-	ToUpper:  (&Decorator[func(func(...string) string, ...string) string]{}).New(ToUpper[func(...string) string]),
-	ToBase64: (&Decorator[func(func(...string) string, ...string) string]{}).New(ToBase64[func(...string) string]),
-	ToBase32: (&Decorator[func(func(...string) string, ...string) string]{}).New(ToBase32[func(...string) string]),
+// Función title de strings
+//
+// ! @param {string}
+// ! @return {string}
+func title(s string) string {
+	sb, n := strings.Split(s, Lit.Space), 0 // separa las palabras
+	s = Lit.NullString
+	for n < len(sb) {
+		ss := []byte{} // string => bytes
+		if ss = []byte(sb[n]); ss[0] >= 97 && ss[0] <= 122 {
+			ss[0] &= 0b11011111 // resta 32
+		}
+		// añade palabra a frase final
+		s += If[string](n == 0)(string(ss), Lit.Space+string(ss))
+		n++ // próxima palabra
+	}
+	return s
 }
 
-/**-----------------------------------------------------------------------------
- *------------------------------------------------------------------------------
+// ? @public @enum Decorators
+type Decorators[T Ordered] struct {
+	// AbstracticusError                                                                     *Decorator[func(func(...any) T) func(ClassType, Object_Of) T]
+	// AbstracticusError1                                                                    *Decorator[func(func() T) func(ClassType, Object_Of) T]
+	// AbstracticusError2                                                                    *Decorator[func(func(T)) func(ClassType, Object_Of) T]
+	// SealedticusError                                                                      *Decorator[func(func(...any) T) func(ClassType) T]
+	AbstractError                                                                         *Decorator[func(func(...any) T) func(ClassType, Object_Of) T]
+	SealedError                                                                           *Decorator[func(func(...any) T) func(ClassType) T]
+	Capitalize, MakeItalic, MakeParagraph, MakeBold, ToLower, ToUpper, ToBase64, ToBase32 *Decorator[func(func(string) string) func(string) string]
+}
+
+func (dec *Decorators[T]) New() *Decorators[T] {
+	return &Decorators[T]{
+		AbstractError: (&Decorator[func(func(...any) T) func(ClassType, Object_Of) T]{}).New(AbstractError),
+		SealedError:   (&Decorator[func(func(...any) T) func(ClassType) T]{}).New(SealedError),
+		// AbstracticusError:     (&Decorator[func(func(...any) T) func(...any) T]{}).New(AbstractError),
+		// SealedticusError:       (&Decorator[func(func(...any) T) func(...any) T]{}).New(SealedError),
+		Capitalize:    (&Decorator[func(func(string) string) func(string) string]{}).New(Capitalize),
+		MakeItalic:    (&Decorator[func(func(string) string) func(string) string]{}).New(MakeItalic),
+		MakeParagraph: (&Decorator[func(func(string) string) func(string) string]{}).New(MakeParagraph),
+		MakeBold:      (&Decorator[func(func(string) string) func(string) string]{}).New(MakeBold),
+		ToLower:       (&Decorator[func(func(string) string) func(string) string]{}).New(ToLower),
+		ToUpper:       (&Decorator[func(func(string) string) func(string) string]{}).New(ToUpper),
+		ToBase64:      (&Decorator[func(func(string) string) func(string) string]{}).New(ToBase64),
+		ToBase32:      (&Decorator[func(func(string) string) func(string) string]{}).New(ToBase32),
+	}
+}
+
+/*******************************************************************************
+ * Decorador para denotar un error de clase abstracta y colgar el código
+ *
+ *! @type {X interface { func(...T) T}}
+ *! @type {T Number}
+ *! @param {X}
+ *! @param {ClassType} parms[0]
+ *! @param {ClassMethods} parms[1]
+ *! @return {T}
  */
+func AbstractError[X interface{ func(...any) T }, T Ordered](inner X) func(ClassType, Object_Of) T {
+	return func(this0 ClassType, this1 Object_Of) T {
+		if this0 == Class.Abstract {
+			if this1 == ObjectOf.Class {
+				Exception(nil)(func() { Throw(errors.ErrAbstractClass) })
+			} else {
+				Exception(nil)(func() { Throw(errors.ErrMethodAbstractClass) })
+			}
+		}
+		var (
+			anyWhere []any
+		)
+		anyWhere = append(anyWhere, this0, this1)
+		return inner(anyWhere)
+	}
+}
+
+/*******************************************************************************
+ * Decorador para denotar un error de clase sealed y colgar el código
+ *
+ *! @type {X interface { func(...T) T}}
+ *! @type {T Number}
+ *! @param {X}
+ *! @param {ClassType} parms[0]
+ *! @param {ClassMethods} parms[1]
+ *! @return {T}
+ */
+func SealedError[X interface{ func(...any) T }, T Ordered](inner X) func(ClassType) T {
+	return func(this0 ClassType) T {
+		if this0 == Class.Sealed {
+			Exception(nil)(func() { Throw(errors.ErrSealedClass) })
+		}
+		return inner(this0)
+	}
+}
+
+// /*******************************************************************************
+//  * Decorador para denotar un error de clase abstracta y colgar el código
+//  *
+//  *! @type {X interface { func(...T) T}}
+//  *! @type {T Number}
+//  *! @param {X}
+//  *! @param {ClassType} parms[0]
+//  *! @param {ClassMethods} parms[1]
+//  *! @return {T}
+//  */
+// func AbstracticusError[X interface{ func(...any) T }, T Ordered](inner X) func(parms ...any) T {
+// 	return func(this ...any) T {
+// 		if this[0].(ClassType) == Class.Abstract {
+// 			if this[1].(Object_Of) == ObjectOf.Class {
+// 				Exception(nil)(func() { Throw(errors.ErrAbstractClass) })
+// 			} else {
+// 				Exception(nil)(func() { Throw(errors.ErrMethodAbstractClass) })
+// 			}
+// 		}
+// 		return inner(this)
+// 	}
+// }
+
+// /*******************************************************************************
+//  * Decorador para denotar un error de clase sealed y colgar el código
+//  *
+//  *! @type {X interface { func(...T) T}}
+//  *! @type {T Number}
+//  *! @param {X}
+//  *! @param {ClassType} parms[0]
+//  *! @param {ClassMethods} parms[1]
+//  *! @return {T}
+//  */
+// func SealedticusError[X interface{ func(...any) T }, T Ordered](inner X) func(parms ...any) T {
+// 	return func(this ...any) T {
+// 		if this[0].(ClassType) == Class.Sealed {
+// 			Exception(nil)(func() { Throw(errors.ErrSealedClass) })
+// 		}
+// 		return inner(this)
+// 	}
+// }
 
 /**
  * Capitaliza una cadena
  *
- *! @param {any}
- *! @return {func() any}
+ *! @param {any} fn a llamar
+ *! @return {func() any} parms para fn a llamar
  */
 // ? @decorator Capitalize(inner, any) any
-func Capitalize[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any(strings.Title(any(inner(x[0])).(string))).(T)
+func Capitalize[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return title(inner(parms))
+	}
 }
 
 /**
   * Hace itálica una cadena
-  *! @param {any}
-	*! @return {func() any}
+  *! @param {any} fn a llamar
+	*! @return {func() any} parms para fn a llamar
 */
 // ? @decorator MakeItalic(inner, any) any
-func MakeItalic[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any("<i>" + any(inner(x[0])).(string) + "</i>").(T)
+func MakeItalic[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return "<i>" + inner(parms) + "</i>"
+	}
 }
 
 /**
   * Hace un párrafo de una cadena
-  *! @param {any}
-	*! @return {func() any}
+  *! @param {any} fn a llamar
+	*! @return {func() any} parms para fn a llamar
 */
 // ? @decorator MakeParagraph(inner, any) any
-func MakeParagraph[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any("<p>" + any(inner(x[0])).(string) + "</p>").(T)
+func MakeParagraph[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return "<p>" + inner(parms) + "</p>"
+	}
 }
-
-// // !++
-// // ? @MakeItalic(inner, s)
-// var v = (&Decorator[func(func(any) any, any) any]{}).New(MakeItalic)
-
-// func functionWithDecorator1(s any) any {
-// 	if decorators.MakeItalic.Execute {
-// 		decorators.MakeItalic.Set(false)
-// 		return decorators.MakeItalic.Decorate(functionWithDecorator1, s)
-// 	}
-// 	return s
-// }
-
-// //!--
-
-// // !++
-// // ? @MakeParagraph(inner, s)
-// var v2 = (&Decorator[func(func(any) any, any) any]{}).New(MakeParagraph)
-
-// func functionWithDecorator2(s any) any {
-// 	if decorators.MakeParagraph.Execute {
-// 		decorators.MakeParagraph.Set(false)
-// 		return decorators.MakeParagraph.Decorate(functionWithDecorator2, s)
-// 	}
-// 	return s
-// }
 
 //!--
 /**
   * Hace negrita de una cadena
-  *! @param {any}
-	*! @return {func() any}
+  *! @param {any} fn a llamar
+	*! @return {func() any} parms para fn a llamar
 */
 // ? @decorator MakeBold(inner, any) any
-func MakeBold[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any("<b>" + any(inner(x[0])).(string) + "</b>").(T)
+func MakeBold[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return "<b>" + inner(parms) + "</b>"
+	}
 }
 
-//-------------------------------------------------------------
-// data type
-
-// /**
-//   * Hace un interface{} de un dato
-//   *! @param {any}
-// 	*! @return {func() any}
-// */
-// // ? @decorator ToInterface(inner, any) any
-// func ToInterface(inner func(any) any, x any) any {
-// 	return inner(x)
-// }
-
-// /* hacerlo con unsafe.Pointer's */
-// /**
-//   * Hace un float de un dato
-//   *! @param {any}
-// 	*! @return {func() any}
-// */
-// // ? @decorator ToFloat(inner, any) any
-// func ToFloat[X interface{ func(any) float64 }](inner X, x any) float64 {
-// 	return inner(x)
-// }
-
-// /**
-//   * Hace un int de un dato
-//   *! @param {any}
-// 	*! @return {func() any}
-// */
-// // ? @decorator ToInt(inner, any) any
-// func ToInt[X interface{ func(any) int }](inner X, x any) int {
-// 	return inner(x)
-// }
-
-// /**
-//   * Hace una any de un dato
-//   *! @param {any}
-// 	*! @return {func() any}
-// */
-// // ? @decorator ToString(inner, any) any
-// func ToString[X interface{ func(any) any }](inner X, x any) any {
-// 	return inner(x)
-// }
-
-// /**
-//   * Hace un cast de un dato
-//   *! @param {any}
-// 	*! @return {func() any}
-// */
-// // ? @decorator To(inner, any) any
-// func To[T Ordered, X interface{ func(T) T }](inner X, x T) T {
-// 	return inner(x)
-// }
-
-//----------------------------------------------------------------
 // Minusculas, Mayusculas
 /**
   * Convierte una any de un dato, a minúsculas
-  *! @param {func(any) any}
-	*! @return {func(any) any}
+  *! @param {func(any) any} fn a llamar
+	*! @return {func(any) any} parms para fn a llamar
 */
 // ? @decorator ToLower(inner, any) any
-func ToLower[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any(strings.ToLower(any(inner(x[0])).(string))).(T)
+func ToLower[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return strings.ToLower(inner(parms))
+	}
 }
 
 /**
   * Convierte una any de un dato, a mayúsculas
-  *! @param {func(any) any}
-	*! @return {func(any) any}
+  *! @param {func(any) any} fn a llamar
+	*! @return {func(any) any} parms para fn a llamar
 */
 // ? @decorator ToUpper(inner, any) any
-func ToUpper[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any(strings.ToUpper(any(inner(x[0])).(string))).(T)
+func ToUpper[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return strings.ToUpper(inner(parms))
+	}
 }
 
 //_______________________________________________________________
 // Bases
 /**
   * Convierte una any de un dato, a Base64
-  *! @param {func(any) any}
-	*! @return {func(any) any}
+  *! @param {func(any) any} fn a llamar
+	*! @return {func(any) any} parms para fn a llamar
 */
 // ? @decorator ToBase64(inner, any) any
-func ToBase64[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any(base64.StdEncoding.EncodeToString([]byte(any(inner(x[0])).(string)))).(T)
+func ToBase64[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return base64.StdEncoding.EncodeToString([]byte(inner(parms)))
+	}
 }
 
 /**
   * Convierte una any de un dato, a Base32
-  *! @param {func(any) any}
-	*! @return {func(any) any}
+  *! @param {func(any) any} fn a llamar
+	*! @return {func(any) any} parms para fn a llamar
 */
 // ? @decorator ToBase32(inner, any) any
-func ToBase32[X interface{ func(...T) T }, T comparable](inner X, x ...T) T {
-	return any(base64.StdEncoding.EncodeToString([]byte(any(inner(x[0])).(string)))).(T)
+func ToBase32[X interface{ func(string) string }](inner X) func(parms string) string {
+	return func(parms string) string {
+		return base64.StdEncoding.EncodeToString([]byte(inner(parms)))
+	}
 }
-
-// //-------------------------------------------------------------------
-// // Append, Prepend
-// /**
-//   * Hace un prefacio a una cadena
-//   *! @param {any func(any) any func(any) any}
-// 	*! @return {func(any) any}
-// */
-// // ? @decorator AppendDecorator(inner, any) any
-// func AppendDecorator[T Ordered, X interface{ func(T) T }](inner X, x, s T) T {
-// 	return inner(s + x)
-// }
-
-// /**
-//   * Hace un epifacio a una cadena
-//   *! @param {any,  func(any) any func(any) any}
-// 	*! @return {func(any) any}
-// */
-// // ? @decorator PrependDecorator(inner, any) any
-// func PrependDecorator[T Ordered, X interface{ func(T) T }](inner X, x, s T) T {
-// 	return inner(x + s)
-// }
-
-// func main() {
-// 	fmt.Println(functionWithDecorator1("gilipollas"))
-// 	fmt.Println(functionWithDecorator2("gilipollas"))
-// }

@@ -9,8 +9,9 @@
 package core
 
 import (
+	//"crypto/rand"
+
 	"crypto/rand"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -22,7 +23,7 @@ import (
 )
 
 type (
-	//?  @public @union
+	//?  @union
 	Union struct {
 		__base__ unsafe.Pointer
 	}
@@ -37,12 +38,12 @@ type (
 
 	// para la sobrecarga de metodos
 	//? @class
-	Ovl1 struct {
+	ovl1 struct {
 		BytesToString FuncV1[[]byte, string] //func(b []byte) string
 		StringToBytes FuncV1[string, []byte]
 		ModifyString  ActionV3[*string, uintptr, int] //func(str *string, starting uintptr, ending int)
 		ModifySlice   ActionV3[*Parm, uintptr, int]   //func(parm *Parm, starting uintptr, ending int)
-		Statically    FuncV1[int, func() int]
+		Statical      FuncV1[int, func() int]
 	}
 
 	//? @class
@@ -52,31 +53,104 @@ type (
 		ArgOptional FuncV2X[T, any, T]
 	}
 
-	// For use with MethodWithModifiers and other types of functions
-	//? @class
-	Return struct {
-		MethodType MethodType
-		Return     any
-		Error      error
+	Is struct {
+		Class ClassType
 	}
+
+	//!+
+	_val_[T comparable] struct {
+		__bool bool
+	}
+
+	// Tipo equivalente al Result<T, E> de rust
+	Result[T, E comparable] struct {
+		// deberia ser compuesto de dos tuplas, una para ca uno de los elementos:
+		//  	- un tuple.TupleV1[T], y un
+		//		- un tuple.TupleV1[E]
+		// Pero da igual, el resultado es que se da un valor para cada elemento.
+		// De otro lado se puede asignar una tupla a cada valor.
+		/**
+		 *! @extends *val
+		 */*_val_[T]
+		Ok  T // valor, tuple.TupleV1[valor], etc
+		Err E // error, errors.ElQueSea, etc
+	}
+
+	// Tipo equivalente al Option<T> de rust
+	Option[T comparable] struct {
+		// deberia ser compuesto de dos tuplas, una para ca uno de los elementos:
+		//  	- un tuple.TupleV1[T], y un
+		//		- un `nil` para `None`. El resultado es `nil` para `None`
+		// Pero da igual, el resultado es que se da un valor para `Some` y `nil`
+		// para `None`. La expresion tal y como está escrita da `nil` a cada elemento.
+		// De otro lado se puede asignar una tupla a `Some`.
+		Some T // valor, tuple.TupleV1[valor], etc
+		None T // nil
+	}
+
+// !-
 )
 
-//
-// The modified method is some like this:
-//
-//? func MethodWithModifiers(methodType MethodType) func(...any) *Return {
-// 	return func(a ...any) *Return {
-// 		a[0] = a[0].(int) + int(methodType)
-// 		if reflect.TypeOf(a[0]).Kind() == reflect.Int {
-// 			return &Return{methodType, a[0].(int), nil}
-// 		}
-// 		return &Return{methodType, -1, nil}
-// 	}
-// }
+func (*_val_[T]) compose(v T) *_val_[T] {
+	var (
+		nil T
+	)
+	if v != nil {
+		return &_val_[T]{__bool: true}
+	}
+	return &_val_[T]{__bool: false}
+}
 
-func (*Ovl1) New() *Ovl1 {
-	return &Ovl1{
-		Statically:
+/**
+ * Constructor de Result[T, E]
+ *? @constructor
+ *<CODE>
+ *?   ...
+ *?   (&core.Result[tuple.TupleV1[string], tuple.TupleV1[error]]{}).New(tuple.TupleV1[string]{"joder"}, tuple.TupleV1[error]{errors.Err1SwitchingProtocols})
+ *
+ *?    ó
+ *
+ *?    (&core.Result[tuple.TupleV1[string], error]{}).New(tuple.TupleV1[string]{"joder"}, errors.Err1SwitchingProtocols)
+ *?   ...
+ *</CODE>
+ *
+ *! @param { @type{T} }
+ *! @param { @type{E} }
+ *! @return { *Result[T, E] }
+ */
+func (r *Result[T, E]) New(t /* valor o tuple */ T, err E) *Result[T, E] {
+	return &Result[T, E]{_val_: (&_val_[T]{}).compose(t), Ok: t, Err: err}
+}
+
+func (r *Result[T, E]) Check() bool {
+	return r.__bool
+}
+
+/**
+ * Constructor de Option[T]
+ *? @constructor
+ *<CODE>
+ *?   ...
+ *?    (&core.Option[tuple.TupleV1[string]]{}).New(tuple.TupleV1[string]{"joder"})
+ *?   ...
+ *</CODE>
+ *
+ *! @param { @type{T} }
+ *! @return { *Result[T] }
+ */
+func (r *Option[T]) New(t /* valor o tuple */ T) *Option[T] {
+	var (
+		nil T
+	)
+	return &Option[T]{Some: t, None: nil}
+	// 'None' es 'nil' en cada elemento de 'T'.
+}
+
+// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
+func (*ovl1) New() *ovl1 {
+	return &ovl1{
+		Statical:
 		/**
 		 * Nos da un valor de tipo Static. Del tipo static de C, no de las clases de instancia/valor
 		 * de Java, p. ej.
@@ -256,30 +330,11 @@ func (*Ovl2[T]) New() *Ovl2[T] {
 	}
 }
 
-// helper function
-func _validate(fnType reflect.Type, tf bool) {
-	if fnType.Kind() != reflect.Func { // es funcion
-		panic("Error: debe ser una función")
-	}
-	if tf {
-		if fnType.NumIn() != 0 { // si nº parametros != 1 ó  el tipo del parámetro 0 implementa Error
-			panic("Error: no debe tener ningún argumento")
-		}
-	} else {
-		if fnType.NumIn() != 1 { // si nº parametros != 1 ó  el tipo del parámetro 0 implementa Error
-			panic("Error: debe tener sólo un argumento")
-		}
-	}
-	if fnType.NumOut() != 0 { // si nº de retornos no es 0
-		panic("Error: Resultado: no debe tener ningún resultado")
-	}
-}
-
-//!+ Lit
+// !+ Lit
 /**
  * Nos da una enum de los literales de runas existentes
  *
- *? @public @enum
+ *? @public @enum Lit
  */
 var Lit = &struct {
 	NullString, NewLine, LF, CarriageReturn, Colon, SemiColon, CR, Alert, BackSpace, FormFeed, FF, HorizontalTab,
@@ -308,17 +363,21 @@ var Lit = &struct {
 
 var (
 	L             = Lit
-	BytesToString = (&Ovl1{}).New().BytesToString //func(b []byte) string
-	StringToBytes = (&Ovl1{}).New().StringToBytes
-	ModifyString  = (&Ovl1{}).New().ModifyString //func(str *string, starting uintptr, ending int)
-	ModifySlice   = (&Ovl1{}).New().ModifySlice  //func(parm *Parm, starting uintptr, ending int)
-	Statically    = (&Ovl1{}).New().Statically
+	BytesToString = (&ovl1{}).New().BytesToString //func(b []byte) string
+	StringToBytes = (&ovl1{}).New().StringToBytes
+	ModifyString  = (&ovl1{}).New().ModifyString //func(str *string, starting uintptr, ending int)
+	ModifySlice   = (&ovl1{}).New().ModifySlice  //func(parm *Parm, starting uintptr, ending int)
+	Statical      = (&ovl1{}).New().Statical
 	/** Genericos */
 	ArgOptionalS = (&Ovl2[string]{}).New().ArgOptional  //func(T, ...T)  T
 	ArgOptionalF = (&Ovl2[float64]{}).New().ArgOptional //func(T, ...T)  T
 	ArgOptionalI = (&Ovl2[int]{}).New().ArgOptional     //func(T, ...T)  T
-	MinOf        = (&Ovl2[int]{}).New().MinOf           //func([]T)  T
-	MaxOf        = (&Ovl2[int]{}).New().MaxOf           //func([]T)  T
+	MinOfI       = (&Ovl2[int]{}).New().MinOf           //func([]T)  T
+	MinOfF       = (&Ovl2[float64]{}).New().MinOf       //func([]T)  T
+	MinOfS       = (&Ovl2[string]{}).New().MinOf        //func([]T)  T
+	MaxOfI       = (&Ovl2[int]{}).New().MaxOf           //func([]T)  T
+	MaxOfF       = (&Ovl2[float64]{}).New().MaxOf       //func([]T)  T
+	MaxOfS       = (&Ovl2[string]{}).New().MaxOf        //func([]T)  T
 )
 
 /**
@@ -467,13 +526,24 @@ func DoWhile(flag bool) func(body func(args ...any) bool, parameters ...any) {
 /**
  * Por defecto para las interpolaciones
  */
-var DefaultMapOfInterpolations map[string]string
-var W FuncV3X[string, int, map[string]string, string] = Interpolation
-var __fileName string
+var (
+	__defaultMapOfInterpolations map[string]string
+	W                            FuncV3X[string, int, map[string]string, string] = Interpolation
+	__fileName                   string
+)
+
+/**
+ * Set map of interpolations
+ *
+ *! @param {map[string]string}
+ */
+func SetMapOfInterpolations(m map[string]string) {
+	__defaultMapOfInterpolations = m
+}
 
 /**
  * Realiza la interpolación de cadenas. Necesita un DefaultMapOfInterpolations, en su caso, para que funcione.
- * Debe ser usado desde la función fmt.Printf(), del modulo std/fmt (no el modulo fmt).
+ * Debe ser usado desde la función fmt.Printf(), del modulo std/fmt (no del modulo fmt).
  * Orden de interpolación:
  *  - A) Lista de todas las variables y constantes de tipo token.STRING (vars & consts string)
  *  - B) Variables de Entorno
@@ -482,7 +552,7 @@ var __fileName string
  *
  *! @param {string}
  *! @param {int}
- *! @param {map[string]string}
+ *! @param {...map[string]string}
  *! @return {string}
  */
 func Interpolation(s string, nf /** 1 or 2 */ int, body ...map[string]string) string {
@@ -500,7 +570,7 @@ func Interpolation(s string, nf /** 1 or 2 */ int, body ...map[string]string) st
 	// assignment
 	if body == nil {
 		body = make([]map[string]string, 1)
-		body[0] = DefaultMapOfInterpolations
+		body[0] = __defaultMapOfInterpolations
 	}
 	//
 	count := len(strings.Split(s, LeftBracket)) - 1
@@ -544,6 +614,10 @@ func Interpolation(s string, nf /** 1 or 2 */ int, body ...map[string]string) st
 								if v, ok := lt.(*ast.BasicLit); ok { // Valores primitivos
 									if v.Kind == token.STRING { // Valores que son STRING
 										return v.Value[1 : len(v.Value)-1] // quita las comillas dobles
+									} else if v.Kind == token.INT || v.Kind == token.FLOAT {
+										return v.Value
+									} else {
+										return L.NullString
 									}
 								}
 							}
@@ -576,6 +650,7 @@ func Interpolation(s string, nf /** 1 or 2 */ int, body ...map[string]string) st
 }
 
 // !-
+
 /**
  * Nos dice si un tipo 'instance' contiene otro de tipo 'root'. Es decir, si 'root' esta contenido en 'instance'.
  * O, dicho de otro modo, si 'instance' es instancia de 'root'.
@@ -638,13 +713,13 @@ func InstanceOf(instance, root reflect.Type) bool {
 }
 
 // !+ UUID
-// ? @public @class Uuid
-type Uuid [16]byte
+// ? @public @class UUid
+type UUid [16]byte
 
 // Uuid: Obtiene un Uuid
-// !@return {_uuid_}
-func UUID() (u *Uuid) {
-	u = new(Uuid)
+// !@return {*UUid}
+func UUID() (u *UUid) {
+	u = new(UUid)
 	rand.Read(u[:])
 	u[8] = (u[8] | 0x40) & 0x7F    // setVariant - 0x40
 	u[6] = (u[6] & 0xF) | (4 << 4) // setVersion - 4
@@ -653,8 +728,85 @@ func UUID() (u *Uuid) {
 
 // Retorna version desparseada de la secuencia Uuid.
 // !interface Stringer
-func (u *Uuid) String() string {
-	return fmt.Sprintf("%x-%x-%x-%x-%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:])
+// !@return {string}
+func (u *UUid) String() string {
+	var (
+		s, f, g, h, j []byte
+	)
+	s = encode(u[0:4])
+	f = encode(u[4:6])
+	g = encode(u[6:8])
+	h = encode(u[8:10])
+	j = encode(u[10:])
+	return string(s) + "-" + string(f) + "-" + string(g) + "-" + string(h) + "-" + string(j)
 }
 
-//!-
+const (
+	hexTable = "0123456789abcdef"
+)
+
+// Encode encodes src into [EncodedLen](len(src))
+// bytes of dst. As a convenience, it returns the number
+// of bytes written to dst, but this value is always [EncodedLen](len(src)).
+// Encode implements hexadecimal encoding.
+// !@param  {[]byte}
+// !@return {[]byte}
+func encode(src []byte) (dst []byte) {
+	j := 0
+	for _, v := range src {
+		dst = append(dst, 0, 0)
+		dst[j] = hexTable[v>>4]
+		dst[j+1] = hexTable[v&0x0f]
+		j += 2
+	}
+	return
+}
+
+// !-
+
+// !+
+const (
+	vkTwo = 2 // parametro segundo de Interpolation (nf)
+)
+
+var Color = &struct {
+	Normal, Reset, Bold, Decreased, Italic, Underline, SlowBlink, RapidBlink, Inverse, Hide, Strike,
+	Black, Red, Green, Yellow, Blue, Magenta, Cyan, White, BlackBg, RedBg, GreenBg, YellowBg, BlueBg,
+	MagentaBg, CyanBg, WhiteBg, LightBlack, LightRed, LightGreen, LightYellow, LightBlue, LightMagenta,
+	LightCyan, LightWhite, LightBlackBg, LightRedBg, LightGreenBg, LightYellowBg, LightBlueBg, LightMagentaBg,
+	LightCyanBg, LightWhiteBg string
+}{
+	Normal: "\u001b[0m", Reset: "\033[0m", Bold: "\033[1m", Decreased: "\033[2m", Italic: "\033[3m", Underline: "\033[4m", SlowBlink: "\033[5m",
+	RapidBlink: "\033[6m", Inverse: "\033[7m", Hide: "\033[8m", Strike: "\033[9m", Black: "\033[30m", Red: "\033[31m", Green: "\033[32m",
+	Yellow: "\033[33m", Blue: "\033[34m", Magenta: "\033[35m", Cyan: "\033[36m", White: "\033[37m", BlackBg: "\033[40m", RedBg: "\033[41m",
+	GreenBg: "\033[42m", YellowBg: "\033[43m", BlueBg: "\033[44m", MagentaBg: "\033[45m", CyanBg: "\033[46m", WhiteBg: "\033[47m",
+	LightBlack: "\033[90m", LightRed: "\033[91m", LightGreen: "\033[92m", LightYellow: "\033[93m", LightBlue: "\033[94m", LightMagenta: "\033[95m",
+	LightCyan: "\033[96m", LightWhite: "\033[97m", LightBlackBg: "\033[100m", LightRedBg: "\033[101m", LightGreenBg: "\033[102m", LightYellowBg: "\033[103m",
+	LightBlueBg: "\033[104m", LightMagentaBg: "\033[105m", LightCyanBg: "\033[106m", LightWhiteBg: "\u001b[107m"}
+
+/**
+ * Impresión con interpolación.
+ * La interpolación puede ser en la cadena de formato, como en los parámetros
+ *
+ * Realiza la interpolación de cadenas. Necesita un DefaultMapOfInterpolations, en su caso, para que funcione.
+ * Debe ser usado desde la función fmt.Printf(), del modulo std/fmt (no del modulo fmt).
+ * Orden de interpolación:
+ *  - A) Lista de todas las variables y constantes de tipo token.STRING, token.INT y token.FLOAT (vars & consts)
+ *  - B) Variables de Entorno
+ *  - C) Variable por defecto (la expansion de ${ENV:var} )
+ *  - D) DefaultMapOfInterpolations variable (or _map value). NO, for PRINTF calls
+ *
+ *! @param {string}
+ *! @param {...any}
+ *! @return {int}
+ *! @return {error}
+ */
+func Print(color string, s ...any) {
+	print(color)
+	for _, v := range s {
+		w := Interpolation(v.(string), vkTwo)
+		print(w)
+	}
+}
+
+// !-

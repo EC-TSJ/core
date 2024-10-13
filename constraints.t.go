@@ -12,6 +12,8 @@ package core
 // 	"golang.org/x/exp"
 // )
 
+//type comparable interface
+
 // Signed is a constraint that permits any signed integer type.
 // If future releases of Go add new predeclared signed integer types,
 // this constraint will be modified to include them.

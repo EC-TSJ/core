@@ -1,29 +1,29 @@
 package core
 
 type (
-	ClassMethods byte
-	ClassType    byte
-	MethodType   byte
+	Object_Of  byte
+	ClassType  byte
+	MethodType byte
 )
 
 const (
-	_Class_     ClassMethods = 0
-	_Method_    ClassMethods = 1
-	_Abstract_  ClassType    = 0b0000
-	_Derived_   ClassType    = 0b0001
-	_Normal_    ClassType    = 1 << 1
-	_Sealed_    ClassType    = 1 << 2
-	_Protected_ ClassType    = 1 << 3
-	_Virtual_   MethodType   = 1 << 0
-	_Override_  MethodType   = 1 << 1
-	_Final_     MethodType   = 1 << 2
+	_Class_     Object_Of  = 0b0000
+	_Method_    Object_Of  = 0b0001
+	_Abstract_  ClassType  = 0b0000
+	_Derived_   ClassType  = 0b0001
+	_Normal_    ClassType  = 1 << 1
+	_Sealed_    ClassType  = 1 << 2
+	_Protected_ ClassType  = 1 << 3
+	_Virtual_   MethodType = 1 << 0
+	_Override_  MethodType = 1 << 1
+	_Final_     MethodType = 1 << 2
 )
 
 /**
  *? @public @enum ClassMethod
  */
-var ClassMethod = &struct {
-	Class, Method ClassMethods
+var ObjectOf = &struct {
+	Class, Method Object_Of
 }{
 	Class:  _Class_,
 	Method: _Method_,
@@ -77,7 +77,7 @@ func (v MethodType) String() string {
 	}[int(v)]
 }
 
-func (v ClassMethods) String() string {
+func (v Object_Of) String() string {
 	return [...]string{
 		"Class Object",  //0
 		"Method Object", //1
